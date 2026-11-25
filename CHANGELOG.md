@@ -1,0 +1,313 @@
+# Changelog
+
+Earlier release notes are available in [GitHub Releases](https://github.com/subzeroid/instagrapi/releases).
+
+## 3.2.20 — 2026-11-24
+
+### Fixed
+
+- Keep carousels and their child media in Top GraphQL search when an individual user tag has invalid coordinates. Preserve a tag's valid `x` and `y` fields when `position` is unusable ([instagrapi #2973](https://github.com/subzeroid/instagrapi/issues/2973)).
+
+## 3.2.19 — 2026-11-19
+
+### Added
+
+- Search for accounts through the Instagram web search box with `web_search_users()` and get typed `UserShort` results (instagrapi #2962).
+
+## 3.2.18 — 2026-11-19
+
+### Added
+
+- Continue mobile Top GraphQL media search with `media_search_top_gql_chunk()`. Each call returns one page and a cursor for the next page, with duplicate media filtered across pages (instagrapi #2961).
+
+## 3.2.17 — 2026-11-18
+
+### Added
+
+- Add `media_search_top_gql()` to return typed media from the first page of mobile Top GraphQL search (#2961).
+
+### Fixed
+
+- Assemble batched GraphQL updates and append streamed list items in response order.
+
+## 3.2.16 — 2026-11-17
+
+### Fixed
+
+- Preserve the initial CAA outcome and response when the existing legacy fallback raises a login error. The standalone diagnostic exports a shareable summary of the initial stage; raw exception attributes remain private (instagrapi #2881).
+
+### Changed
+
+- Update the development Ruff pin to 0.17.5 (#2958).
+
+## 3.2.15 — 2026-11-16
+
+### Added
+
+- Add `create_secondary_account()` for the observed linked Accounts Center flow, returning a typed user and separate session settings while preserving the main client. Port the API from aiograpi 2.1.15 (aiograpi #528, #561). Creation does not automatically retry or follow redirects; uncertain outcomes are reported explicitly.
+
+### Known limitations
+
+- Synchronous live attempts created profiles with usernames different from those requested, and the returned sessions required a challenge. The client rejects these mismatched results; successful synchronous creation and session handoff have not been established. The related async flow was previously validated in aiograpi.
+
+### Changed
+
+- Select an available Python 3.13 patch release in CI instead of pinning 3.13.5, which is unavailable on Ubuntu 26.04.
+
+## 3.2.14 — 2026-11-15
+
+### Fixed
+
+- Preserve emoji in `create_note()` by using the text-only Inbox Tray GraphQL mutation instead of the legacy REST endpoint (instagrapi #2886). Preserve the audience argument and typed `Note` return; reject unsuccessful or malformed creation responses without retrying the mutation.
+
+## 3.2.13 — 2026-11-14
+
+### Fixed
+
+- Restore `create_music_note()` by sending the root-field and pando headers with the existing operation and payload (instagrapi #2949). Keep private GraphQL headers local to each request so music Note metadata does not leak into later calls.
+
+## 3.2.12 — 2026-11-14
+
+### Fixed
+
+- Keep `direct_send()` navigation metadata identical in the request header and body, including text, links and replies. Add an optional request-local `nav_chain` argument and support `send_attribute="inbox"` while preserving existing values and the historical default body chain (related to instagrapi #2870).
+
+## 3.2.11 — 2026-11-13
+
+### Fixed
+
+- Derive the USDID registration key ID from the public key and repair legacy random IDs without rotating the saved UUID or key pair (#2939).
+- Raise `PrivateError` when `media_search()` receives a missing, null or malformed media grid instead of silently returning empty or partial results. Preserve valid empty results, skip malformed individual nodes, and stop repeated pagination cursors (#2946). This improves response validation; it does not restore server-side search availability.
+
+## 3.2.10 — 2026-11-12
+
+### Added
+
+- Add `comment_likers_v1()` and route `comment_likers()` through the private comment-likers endpoint, returning raw user dictionaries with optional amount truncation (#2944). Explicit GraphQL helpers and cursors remain available.
+
+## 3.2.9 — 2026-11-10
+
+### Fixed
+
+- Replace the rejected legacy `users_stories_gql()` query with modern XDT web GraphQL, cap requests at 25 user IDs per batch, preserve per-user limits, and normalize web story media identifiers without cyclic owner graphs (#2940).
+
+## 3.2.8 — 2026-11-09
+
+### Added
+
+- Add typed `user_stories_web()` results from the modern web stories GraphQL query, including authenticated `fb_dtsg` bootstrap and normalized media, owner, link and location metadata (#2934).
+
+### Fixed
+
+- Inject the saved session into GraphQL requests and clear it during session reset. Existing private/default story routes and explicit raw legacy helpers remain unchanged (#2934).
+
+## 3.2.7 — 2026-11-07
+
+### Fixed
+
+- Resolve locations from complete private place identity before legacy name search, including location serialization for uploads and edits. Recognize explicit Facebook place IDs without inventing missing coordinates or changing explicit provider sources.
+
+## 3.2.6 — 2026-11-07
+
+### Fixed
+
+- Keep authenticated collection reads on private/mobile or existing app GraphQL routes; propagate restrictions and request failures instead of silently retrying legacy web queries.
+- Preserve pagination cursor ownership across endpoint failures, and report media fetch errors instead of empty or incomplete success.
+- Keep every response when fetching public stories for more than 50 users, and return an empty result without a request for an empty batch.
+
+## 3.2.5 — 2026-11-06
+
+### Changed
+
+- Use modern profile GraphQL for automatic public user lookups and direct ID lookups, preserving private-first routing and caches. Keep the explicit legacy username helper available.
+- Fetch public media directly with the existing modern GraphQL query instead of first sending the legacy media query.
+
+## 3.2.4 — 2026-11-06
+
+### Fixed
+
+- Keep legacy web-profile lookup headers scoped to that request so later public requests retain their configured session headers.
+- This header-isolation fix does not resolve Instagram legacy profile rate limits; existing modern profile GraphQL methods and query IDs are unchanged.
+
+## 3.2.3 — 2026-11-05
+
+- Fetch the password encryption key from `launcher/sync/` instead of `qe/sync/`, which now returns 404 without the key headers. Read key headers from error responses before timeout retries or challenge handling, and raise `ClientError` instead of `TypeError` when Instagram omits them (#2920, #2923).
+
+## 3.2.2 — 2026-10-27
+
+- Allow Pydantic 2.14 on non-Android platforms while preserving the Android 2.12.5 pin and clarifying the Termux wheel and interpreter requirements.
+
+## 3.2.1 — 2026-10-25
+
+- Report unmeasured private bandwidth as `-1.000` speed and zero byte/time counters instead of randomized values, preserving explicit request and upload header overrides.
+- Pin the PyPI publishing action to the reviewed v1.14.3 commit instead of a mutable release branch.
+
+## 3.2.0 — 2026-10-24
+
+- Require Python 3.11+ and Pillow 13+ to adopt upstream Pillow security fixes, including [CVE-2026-96778](https://github.com/python-pillow/Pillow/security/advisories/GHSA-g7cr-3p24-7wf7). Python 3.10 users remain on instagrapi 3.1.0, whose Pillow dependency range excludes these fixes; upgrade Python before upgrading instagrapi.
+- Test Python 3.11 through 3.14 and audit runtime dependencies with `pip-audit` in CI. Retain the separate MoviePy 2.2.1 installation with `--no-deps` for optional video helpers.
+
+## 3.1.0 — 2026-10-20
+
+- Add opt-in private HTTP/2 through `Client(private_transport="utls", utls_library_path=...)`, with an explicitly built native component and the existing curl default preserved (#2892, based on #2861 by DazhongLee). See the [uTLS setup and limitations](https://subzeroid.github.io/instagrapi/usage-guide/login-migration/#optional-utls-transport-for-caa).
+- Enforce HTTP/2 before sending requests, numeric total deadlines and no native HTTP/2 request replay for the optional transport; preserve prepared bodies, cookies, proxy selection and explicit Host authority (#2892).
+- Document native build requirements, supported platforms and diagnostic transport selection; include the native build sources in wheel and source distributions (#2892).
+- Reject invalid native HTTP/2 peer settings before connection-state changes and reject server push when the client advertised it disabled. Refresh native dependency pins and require Go 1.27.2 or newer for source builds (#2895).
+- Correct Git identity selection for generated documentation commits (#2891).
+
+## 3.0.26 — 2026-10-17
+
+- Catch HTTP 400 `error_type=needs_upgrade` as `ClientNeedsUpgradeError`, an `UnknownError` subclass that preserves existing handlers, original response diagnostics and CAA fallback behavior (#2887). This improves error handling; it does not establish recovery from a CAA response without a session.
+- Clarify that `set_device()` replaces the saved device profile and show how to retain app fields when changing hardware settings (#2885).
+- Update development Ruff to 0.17.0 and CodeQL Action to 4.38.3 (#2883, #2884).
+
+## 3.0.25 — 2026-10-14
+
+- Configure non-LSD public GraphQL User-Agent profiles with `public_graphql_user_agent`; use `None` to share the web UA or `set_public_user_agent(...)` to update both profiles. Keep existing route defaults (#2880).
+- Preserve public and GraphQL UA choices in saved settings and file round trips, retain explicit constructor UAs with older settings, and handle case-insensitive per-request doc_id UA overrides without changing the session (#2880).
+
+## 3.0.24 — 2026-10-13
+
+- Honor `Client(with_challenge_flow=False)` by propagating the original challenge without automatic resolution or request replay; keep automatic handling enabled by default and custom exception hooks first (#2878).
+- Raise actionable `ChallengeRequired` errors when built-in code or password prompts reach EOF, preserving challenge context and valid piped input (#2878).
+
+## 3.0.23 — 2026-10-13
+
+- Deduplicate users across pages in `iter_user_followers_v1()` and `iter_user_following_v1()`, preserving the first occurrence and counting unique users toward `amount`. Continue across duplicate-only pages with an advancing cursor (#2876).
+
+## 3.0.22 — 2026-10-12
+
+- Reuse one runtime `X-Pigeon-Session-Id` per `Client` and omit fabricated `X-IG-SALT-IDS` defaults. Preserve fresh timestamps, saved-settings boundaries and explicit header overrides (#2869).
+- Document consistent User-Agent selection for saved Android 448 profiles (#2864) and add insto to the related services (#2866).
+- Fix documentation builds with pymdown-extensions 12.2 while keeping test extras installable on Python 3.10 (#2867).
+- Document the separate MoviePy installation required by the regression suite.
+
+## 3.0.21 — 2026-10-09
+
+- Require TLS 1.3 for private curl requests while retaining hybrid/classical groups, HTTP/2, certificate verification and proxy handling (#2862). HTTPS targets and TLS-intercepting proxies must support TLS 1.3; see the [private transport guide](https://subzeroid.github.io/instagrapi/usage-guide/interactions/#private-http2-transport).
+- Add sanitized CAA and two-factor stage details to the [login diagnostic](https://github.com/subzeroid/instagrapi/blob/master/examples/diagnose_login.py), including per-attempt response metadata and continuation context (#2858).
+- Update development Ruff to 0.16.10 (#2859).
+
+## 3.0.20 — 2026-10-04
+
+- Update the default Android app profile to 449.0.0.52.84 with the native User-Agent build and API Bloks version; retain the 448 profile for saved settings and explicit selection (#2855).
+- Add serialized CAA login-payload regression coverage for QPL fields and direct-home context while preserving the existing request body.
+
+## 3.0.19 — 2026-10-03
+
+- Clear stale account routing and claim headers when authorization is reset for relogin or successful logout. Preserve device identifiers, valid saved-session reuse and cookie-only cleanup (#2851).
+
+## 3.0.18 — 2026-10-02
+
+- Pair `two_step_verification_context` with its matching parameter value when CAA fields are reordered, preserving scalar positions and reading nested static `server_params`. Require exact quoted app references and retain the existing JSON fallback and action-only two-step scope (#2849).
+
+## 3.0.17 — 2026-10-02
+
+- Preserve HTTP status in `ClientError.code` for 4xx/5xx responses while keeping response payloads and report-flow errors intact (#2847).
+- Report each CAA login attempt separately in the sanitized [login diagnostic](https://github.com/subzeroid/instagrapi/blob/master/examples/diagnose_login.py) output, preserving outcome categories and continuation indicators before fallback overwrites the last response (#2846). This improves diagnosis without changing login behavior.
+
+## 3.0.16 — 2026-09-30
+
+- Fix `highlight_info()` validation when the top-level owner’s `friendship_status` omits `user_id`. Normalize the owner with the existing short-user extractor while preserving relationship values and story order (#2844; fixes #2837).
+- Keep the password-encryption test offline by supplying its public-key response locally (#2843).
+- Update development Ruff to 0.16.9 and CodeQL Action to 4.38.2 (#2838, #2839).
+
+## 3.0.15 — 2026-09-29
+
+- Read nested `server_params` contexts during CAA profile-code verification, avoiding `missing code_entry context_data` for that response shape (#2841). Preserve operand positions and ignore non-literal or unrelated contexts. This does not establish a general fix for `needs_upgrade` or other challenge routes.
+
+## 3.0.14 — 2026-09-25
+
+- Restore `media_info_gql()` for the optional `public_transport="curl"` path using the current PostRoot document, `fb_dtsg` token, and browser headers (#2835). The default `requests` transport still received HTML for the sampled GraphQL call; private media lookup is unchanged.
+- Preserve the `needs_upgrade` type and known outdated-app message category in the sanitized `examples/diagnose_login.py` report (#2834). This diagnostic change does not alter login behavior or resolve #2807.
+- Clarify that `user_medias*_gql()` uses app GraphQL first and public GraphQL as a fallback (#2833).
+- Update development Ruff and the CodeQL Action (#2829, #2830).
+
+## 3.0.13 — 2026-09-23
+
+- Normalize carousel resource IDs in app profile timeline responses before extraction, so `user_medias_gql()` accepts children with a composite `id` and no `pk` (#2831). Explicit resource IDs and validation of identifier-free children are preserved.
+
+## 3.0.12 — 2026-09-21
+
+- Restore optional `public_transport="curl"` response-body reads with urllib3 2.8 by requiring `curl-adapter>=1.2.3`. This also fixes password-encryption key fetching through that transport (#2827; thanks to @marnelle1 for the report).
+- Add regression coverage and CI checks for buffered and streamed public curl responses with plain, gzip and deflate bodies.
+
+## 3.0.11 — 2026-09-21
+
+- Reuse an available saved private session before the first `user_related_profiles_gql()` request, so related-profile lookup no longer depends on an earlier public lookup having copied the session (#2824).
+- Restore authenticated `user_short_gql()` and `user_info_v2_gql()` lookups with the current shared web profile query and complete Relay variables. Remove the short-profile friendly-name override that caused HTML responses in verified requests (#2825).
+
+## 3.0.10 — 2026-09-21
+
+- Preserve CAA fallback errors, including throttling and rate limits, instead of masking them with the earlier legacy `needs_upgrade` or `BadPassword`. Keep the original legacy error when the CAA endpoint is unavailable or returns no session.
+- Parse media responses with `crosspost: null` or `coauthor_producers: null` as empty lists, avoiding validation and extraction errors while preserving valid values and rejecting malformed values (#2821, #2822).
+
+### For contributors
+
+- Fail manually dispatched live test jobs when test account configuration is missing, so an unconfigured run cannot appear to validate live behavior (#2820).
+
+## 3.0.9 — 2026-09-20
+
+- Separate HTTP timeouts from the `request_timeout` pacing delay in download, share-link, public HEAD, and legacy DTSG helpers. Their `read_timeout` defaults to 25 seconds and can be changed independently of request pacing (#2817, thanks to @marnelle1 for the report).
+- Clarify the existing CAA-to-legacy transition in the login guides: it follows an explicit fallback instruction from Instagram.
+
+## 3.0.8 — 2026-09-20
+
+- Keep user, media, story, follower, and following caches separate for each `Client`, so one client cannot reuse or clear another client's cached data (#2813).
+- Make `user_highlights()` and `user_highlights_v1()` respect positive `amount` limits before parsing the returned tray. `amount=0` continues to return all Highlights (#2814).
+
+## 3.0.7 — 2026-09-19
+
+- The default app profile is now the current Android app: `448.0.0.0.20` (version_code `1065560286`, captured bloks_versioning_id). New clients present the current app version by default, avoiding the server-side "Your version of Instagram is out of date" login gate reported in #2807. Saved 446 sessions keep resolving; the 446 profile remains explicitly selectable via `set_app("446.0.0.49.77")` (#2812).
+
+## 3.0.6 — 2026-09-19
+
+- Align the Reels configure payload (`clip_configure`) with the current Android app: send `clips_segments_metadata`, `clips_audio_metadata`, `additional_audio_info`, nested `edits`, and the current capture metadata fields; drop `media_folder` and `date_time_original` the app no longer sends (#2808).
+- Story captions now use the current app rich text format: `rich_text_format_types: ["modern_refreshed_v2"]` and matching `text_metadata` fields (#2809).
+- New helpers: `media_upload_status(post_client_id)` polls `media/get_upload_status_REST/` for asynchronous clip/story publishing until `COMPLETED`, and `video_refresh_resources(media_id)` returns a fresh `video_versions` list when previously returned video URLs have expired (#2810).
+
+## 3.0.5 — 2026-09-18
+
+- Refresh the private GraphQL `FollowersList`/`FollowingList` doc ids to the ones the current Android app sends (`284797047911918316998205836755`, `16104639286363954576550227636`); the previous ids still resolve but are one generation behind (#2798).
+
+## 3.0.4 — 2026-09-17
+
+- `get_settings()` now returns `fbns_auth` from the live FBNS auth object when present (falling back to previously saved values), so `dump_settings()`/`load_settings()` preserve the FBNS device auth across a settings round trip. Mirror of the aiograpi 2.0.4 fix.
+
+## 3.0.3 — 2026-09-17
+
+- `login()` now follows Instagram's CAA fallback instruction (`CAA_LOGIN_FALLBACK:fallback_triggered`) and completes the legacy accounts flow, so typed failure reasons such as `PleaseWaitFewMinutes` or `BadPassword` surface instead of the generic "CAA login did not return a session" error (#2800).
+- `ClientError` raised by CAA login now carries the observed CAA step markers as `caa_actions` (for example `CAA_LOGIN_FORM:account_list`) for diagnostics.
+
+## 3.0.2 — 2026-09-13
+
+- Reels feed readers now accept media from current `items_with_ads` responses when legacy `items` is empty or absent, avoiding empty results and unnecessary pagination. Existing feed ordering and cursor behavior are preserved.
+- Reels readers now stop as soon as the requested amount is collected, including on the final page or before a later stop marker.
+- Reels pagination now stops when the next cursor is missing or already visited, preserving collected media without repeating the same requests.
+- Reels readers now honor last_media_pk when the server returns media IDs as strings, stopping before the matching media.
+
+## 3.0.1 — 2026-09-13
+
+- Return configured photos, videos, albums, Reels, IGTV and Stories without a follow-up `qe/expose/` request, preventing an exposure endpoint error from hiding a successful upload (#2790).
+
+## 3.0.0 — 2026-09-13
+
+- **Breaking:** Make `login()` use CAA directly; retain the previous login flow and arguments as `login_legacy()`. Default login does not automatically fall back to legacy login.
+- Reject CAA login with a clear error before preflight when saved app settings lack the required Bloks hash; document explicit app-profile migration.
+- **Breaking:** Use `curl_cffi` and private HTTP/2 by default and install `curl_cffi` as a runtime dependency. Preserve explicit saved transport choices and the `private_transport="requests"` compatibility option.
+
+- Update the default Android app profile to Instagram `446.0.0.49.77` while retaining the previous `428.0.0.47.67` profile for saved settings and explicit selection.
+- Try the existing CAA login flow when `login_legacy()` returns `needs_upgrade`, preserving the original error if no session or supported two-factor flow is available.
+
+## 2.18.20 — 2026-09-12
+
+- Advertise the hybrid `X25519MLKEM768` TLS group in the optional private curl transport to address connection failures on proxy paths that reject a classical-only ClientHello. Preserve classical groups and h2-only ALPN; this changes TLS reachability, not authentication handling.
+
+## 2.18.19 — 2026-09-09
+
+- Add optional private HTTP/2 transport through `Client(private_transport="curl")` and the `curl` extra. TLS offers only `h2`; private requests retain mobile headers, proxy configuration, cookies and saved device settings. The default transport and login routing remain unchanged. See the [private transport guide](https://github.com/subzeroid/instagrapi/blob/master/docs/usage-guide/interactions.md#private-http2-transport).
+- Add a [login diagnostic script](https://github.com/subzeroid/instagrapi/blob/master/examples/diagnose_login.py) that preserves a sanitized summary of each login response, including failures hidden by a later fallback.
+- Add real TLS/HTTP2 regression tests and guarded CAA live validation, with minimum/current curl dependency checks on Python 3.10 and 3.14.
+- Update Ruff and CodeQL tooling.
+
+The transport change addresses a verified transport-sensitive CAA failure mode. It does not remove account restrictions or guarantee successful login. Follow [issue #2778](https://github.com/subzeroid/instagrapi/issues/2778) for the remaining investigation.

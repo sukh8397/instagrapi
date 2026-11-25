@@ -1,0 +1,153 @@
+# Public Transport
+
+`instagrapi` uses two network surfaces:
+
+* private mobile API requests, used for authenticated mobile flows;
+* public web requests, used by helpers such as public profile and public media lookups.
+
+The default public web transport is `requests`. It has the smallest dependency footprint and keeps the existing
+transport-level retry behavior.
+
+The public transport option is exposed as `PublicTransport = Literal["requests", "curl"]`.
+
+For public web endpoints that are sensitive to browser TLS fingerprints, you can install the optional curl transport:
+
+```bash
+pip install "instagrapi[curl]"
+```
+
+The curl extra requires `curl-adapter>=1.2.3` for compatibility with urllib3 2.8. If an existing environment has an older adapter, upgrade it with `pip install --upgrade "curl-adapter>=1.2.3"`.
+
+Then opt in explicitly:
+
+```python
+from instagrapi import Client
+
+cl = Client(public_transport="curl", public_transport_impersonate="chrome136")
+```
+
+`public_transport` configures the public web session. Private mobile API requests
+use [private HTTP/2 transport](interactions.md#private-http2-transport) by default.
+
+## User-Agent configuration
+
+Public web requests and the private Android API use separate profiles. The existing defaults are retained: the `requests` public session uses its Safari UA, the curl public session uses the UA selected by `public_transport_impersonate`, and non-LSD `doc_id` GraphQL uses the existing iOS UA. Some public helpers reuse authentication cookies; public does not always mean anonymous.
+
+`public_user_agent` configures the ordinary public session, legacy `query_hash`/`query_id` requests, and the preparation GET and POST of `include_lsd=True` GraphQL. `public_graphql_user_agent` configures non-LSD `doc_id` requests, including high-level profile and comment helpers. Set it to `None` to make that path follow `public_user_agent`:
+
+```python
+from instagrapi import Client
+
+cl = Client(public_transport="curl", public_graphql_user_agent=None)
+```
+
+For an existing client, `cl.set_public_user_agent(web_ua)` applies the supplied string to the web session and makes non-LSD GraphQL follow it. Use `cl.set_public_user_agent(web_ua, graphql_ua)` or the constructor's `public_user_agent` and `public_graphql_user_agent` arguments for independent strings. For `public_doc_id_graphql_request`, a `headers={"User-Agent": ...}` override takes precedence for its POST, is case-insensitive and does not change the session header. LSD preparation GET requests continue using the web profile, and their POST can be explicitly overridden. Legacy `public_request` and `public_graphql_request` retain their existing session-header update behavior.
+
+The legacy `user_info_by_username_gql()` helper keeps its endpoint-specific Chrome 122 profile. Its request headers apply only to that call and do not replace the public session headers, including when the request fails.
+
+Header isolation does not remove Instagram rate limits or restore legacy endpoint availability. Modern profile queries use a separate route and retain their existing query IDs.
+
+Both settings, including a shared `public_graphql_user_agent=None`, survive `get_settings()`/`set_settings()` and `dump_settings()`/`load_settings()` round trips. Saved UA fields take precedence over constructor values. Older settings without UA fields use the selected transport's default, except that an explicit constructor `public_user_agent` remains in effect. Selecting a public transport through `set_retry_config(...)` retains its existing behavior of resetting the web UA to that transport's default; apply a custom UA with `set_public_user_agent(...)` afterward. An independent GraphQL UA remains unchanged, while a shared one follows the new web UA.
+
+These controls do not change the private Android UA, TLS/browser impersonation, dependencies or retry policy. Changing a UA alone does not reproduce a different transport fingerprint, and arbitrary caller-supplied UA strings are not guaranteed to be accepted by Instagram. This configuration correction does not establish a cause of account restrictions or replace the legacy default strings.
+
+## Modern profile routing and remaining legacy queries
+
+The public branch of `user_info()` uses the profile `doc_id` directly. The public branch of
+`user_info_by_username()` uses modern search to find an exact username match, then fetches
+that ID with the profile query. `user_id_from_username()` shares that route. Authenticated
+clients retain their private-first order, and existing caches and private fallbacks are preserved.
+`user_info_gql(user_id)` also uses the modern profile query directly, without an intermediate
+username lookup. These web queries can reuse saved session cookies; modern does not mean
+anonymous or unrestricted access.
+
+`user_info_by_username_gql(username)` remains the explicit legacy `web_profile_info` method
+for compatibility. Automatic profile routing does not fall back to it after a modern error.
+The query IDs, transport, User-Agent configuration and retry settings are unchanged.
+
+`media_info_gql()` now sends the existing modern `PolarisPostRootQuery` directly, including its token preparation. It accepts the supported GraphQL and REST-shaped media responses; `media_info()` retains its private-first selection for authenticated clients. Modern media reads can require saved session cookies. Returned location metadata comes from the modern response; call `location_complete()` when you need additional private location details.
+
+Authenticated high-level follow-list, story, tagged-media and hashtag reads do not
+fall back to legacy web queries after a private failure. Follow lists and user
+media may restart collection retrieval through their existing private app GraphQL
+alternative when the primary endpoint is unavailable or returns an unsupported
+response. Paginated APIs only select a fallback without an incoming cursor.
+Authorization, throttling, challenge and transport errors propagate to the caller;
+they do not select another endpoint. Programming errors also propagate.
+
+Pagination cursors belong to the endpoint that returned them. A failed request
+with a nonempty cursor is not replayed against another endpoint. Keep the same
+method and authentication state for subsequent pages; previously saved cursors
+are not translated between public and private APIs. Unified media pagination wraps
+a cursor with its originating route when selecting an alternate endpoint; treat
+returned cursors as opaque strings and pass them back unchanged. Explicit v1 helpers and raw public GraphQL requests keep their endpoint cursor
+format. Media fetch failures now
+raise instead of appearing as an empty or successfully completed partial list.
+
+Explicit public helpers remain available for callers that deliberately choose
+those contracts. Their presence does not imply that Instagram currently accepts
+them. Batched public story reads preserve every 50-user response, including
+per-user limits; an empty batch returns an empty list without making a request.
+
+The remaining legacy web operations need their own query shapes and response validation:
+
+| Legacy operation | Existing alternative / migration status |
+| --- | --- |
+| Public user media pagination | Private app GraphQL is already selected for authenticated clients; the anonymous `query_hash` fallback remains. |
+| Followers and following chunks | Private GraphQL alternatives exist and are already preferred in authenticated high-level lookups. Public pagination is a different query contract. |
+| Tagged media, including pagination | No equivalent modern web query is established here; private tagged-media methods remain available. |
+| Hashtag info and media pagination | No equivalent modern web query is established here; private hashtag methods remain available. |
+| Story batches | Private story methods exist; a modern profile response does not replace the reel response. |
+| Comment likers | No equivalent modern web query is established here; comments use a separate query from profile data. |
+| Related profiles and raw profile-related info | Separate recommendation queries; a modern profile response does not contain the same data. |
+| Raw `top_search` | Its places schema differs from modern user search. `location_search_name` still uses this route. PK resolution in `location_search_pk`, `location_complete` and `location_build` skips it when matching private info has a positive external ID and nonempty source; incomplete identity still uses legacy name search, including indirect upload/edit location handling. A replacement for name-only search has not been live-validated. |
+| Raw location feed | Separate location-media pagination; a profile query is not an alternative. |
+
+The low-level `public_graphql_request()` keeps its `query_hash`/`query_id` interface for explicit
+callers. `user_web_profile_info_v1()` is a separate private raw-response helper, not the automatic
+public profile route. None of these remaining operations is declared broken merely because it
+uses an older request format, and successful profile reads do not validate their replacements.
+
+## Live Comparison
+
+This is a point-in-time live comparison from May 15, 2026. Instagram public web behavior changes frequently, so treat
+these numbers as a practical signal, not a guarantee.
+
+Method:
+
+* branch: curl public transport PR branch;
+* environment: fresh remote Linux clone with `instagrapi[curl]` installed;
+* Python: 3.12;
+* rounds: 4;
+* public request retry loop: disabled with `public_request_retries_count = 1`;
+* curl impersonation: `chrome136`;
+* identical inputs for both transports.
+
+| Public web helper | `requests` | `curl` |
+| --- | ---: | ---: |
+| `user_info_by_username_gql("instagram")` | 0/4 ok, p50 12.05s | 3/4 ok, p50 1.42s |
+| `user_info_by_username_gql("1fexd")` | 0/4 ok, p50 12.05s | 2/4 ok, p50 0.20s |
+| `media_pk_from_url("https://www.instagram.com/p/C_BM2yAN4Rm/")` | 4/4 ok, p50 0.00s | 4/4 ok, p50 0.00s |
+| `media_info_gql("3441088131388376166")` | 0/4 ok, p50 2.49s | 0/4 ok, p50 2.45s |
+| Total | 4/16 ok, p50 7.28s | 9/16 ok, p50 0.23s |
+
+Observed failures:
+
+* `requests` repeatedly hit `429` on `users/web_profile_info`;
+* `curl` avoided those `429` responses in early rounds, then hit `401` on the same public endpoint;
+* both transports hit `404` on the tested public media info path.
+
+On September 24, 2026, `media_info_gql` with `public_transport="curl"` returned a current public carousel post using a saved session. The default `requests` transport returned HTML for that GraphQL call. This single-post check is separate from the historical May comparison above; public document IDs and access behavior can change.
+
+## Recommendation
+
+Use the default `requests` transport unless you specifically need public web endpoints that are being rate limited or
+blocked by TLS fingerprint checks.
+
+Use `public_transport="curl"` when:
+
+* public profile web lookups return repeated `429` responses with the default transport;
+* you can install the optional native dependencies pulled by `instagrapi[curl]`;
+* you understand that public web access is still opportunistic and can return `401`, `403`, `404`, or `429`.
+
+Prefer authenticated private API helpers for production workflows when an equivalent private/mobile path exists.
