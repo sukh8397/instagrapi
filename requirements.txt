@@ -1,0 +1,10 @@
+flask>=3.0.0
+gunicorn>=21.2.0
+instagrapi>=3.2.20
+curl_cffi>=0.15.0
+requests>=2.34.2
+pydantic>=2.12.5,<2.15
+Pillow>=13.0.0
+pycryptodomex>=3.23.0
+PySocks>=1.7.1
+beautifulsoup4>=4.11.0

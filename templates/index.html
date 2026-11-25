@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scrape Instagram Photos - Live Photo & Metadata Downloader</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            igPink: '#E1306C',
+            igPurple: '#C13584',
+            igOrange: '#F56040',
+            igYellow: '#FCAF45',
+            darkBg: '#0f172a',
+            darkCard: '#1e293b'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .ig-gradient-text {
+      background: linear-gradient(45deg, #FCAF45, #F56040, #E1306C, #C13584, #833AB4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .ig-gradient-bg {
+      background: linear-gradient(45deg, #FCAF45, #F56040, #E1306C, #C13584, #833AB4);
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans flex flex-col justify-between">
+
+  <!-- Navbar -->
+  <header class="border-b border-slate-800 bg-slate-900/60 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl ig-gradient-bg flex items-center justify-center text-white shadow-lg shadow-pink-500/20">
+          <i class="fa-brands fa-instagram text-2xl"></i>
+        </div>
+        <div>
+          <span class="text-xl font-bold tracking-tight text-white">Scrape <span class="ig-gradient-text">Instagram</span> Photos</span>
+          <span class="text-xs px-2 py-0.5 ml-2 rounded-full bg-pink-500/10 text-pink-400 border border-pink-500/20">v2.0 Live</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-4">
+        <a href="https://github.com/sukh8397/scrape-instagram-photos" target="_blank" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium border border-slate-700 transition">
+          <i class="fa-brands fa-github text-base"></i>
+          <span>GitHub</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex-grow w-full">
+    <div class="text-center max-w-3xl mx-auto mb-8">
+      <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight mb-4">
+        Scrape & Download <span class="ig-gradient-text">Instagram Photos</span> in Bulk
+      </h1>
+      <p class="text-slate-400 text-base sm:text-lg">
+        Extract high-resolution photos, carousels, profile metadata, timestamps, likes, and captions. Fast, structured, and ready to export.
+      </p>
+    </div>
+
+    <!-- Scrape Form Card -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl relative mb-10">
+      <form id="scrapeForm" class="space-y-4">
+        <div>
+          <label for="queryInput" class="block text-sm font-medium text-slate-300 mb-2">
+            Instagram Post URL or Profile Username
+          </label>
+          <div class="relative flex items-center">
+            <span class="absolute left-4 text-slate-500">
+              <i class="fa-solid fa-link"></i>
+            </span>
+            <input 
+              type="text" 
+              id="queryInput" 
+              required
+              placeholder="e.g. https://www.instagram.com/p/DFzL121P0qG/ or @natgeo" 
+              class="w-full pl-11 pr-32 py-3.5 bg-slate-950 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent text-sm sm:text-base transition"
+            >
+            <button 
+              type="submit" 
+              id="submitBtn" 
+              class="absolute right-2 px-5 py-2 rounded-lg ig-gradient-bg text-white font-medium hover:opacity-90 active:scale-95 transition flex items-center gap-2 text-sm shadow-md"
+            >
+              <i class="fa-solid fa-bolt"></i>
+              <span>Scrape</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Quick Samples -->
+        <div class="flex items-center gap-2 flex-wrap text-xs text-slate-400">
+          <span>Quick Samples:</span>
+          <button type="button" onclick="setQuery('https://www.instagram.com/p/DFzL121P0qG/')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 rounded-md text-slate-300 transition">Sample Post</button>
+          <button type="button" onclick="setQuery('@natgeo')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 rounded-md text-slate-300 transition">@natgeo</button>
+          <button type="button" onclick="setQuery('@nasa')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 rounded-md text-slate-300 transition">@nasa</button>
+          <button type="button" onclick="setQuery('@instagram')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 rounded-md text-slate-300 transition">@instagram</button>
+        </div>
+
+        <!-- Advanced Toggle -->
+        <div>
+          <button 
+            type="button" 
+            onclick="toggleAdvanced()" 
+            class="text-xs text-pink-400 hover:text-pink-300 flex items-center gap-1.5 font-medium transition"
+          >
+            <i id="advIcon" class="fa-solid fa-chevron-right text-[10px]"></i>
+            <span>Advanced Settings (Session Cookie, Max Posts, Local Download)</span>
+          </button>
+
+          <div id="advancedSection" class="hidden mt-3 p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-3">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label for="sessionIdInput" class="block text-xs font-medium text-slate-400 mb-1">
+                  Session ID Cookie (<code class="text-pink-400">sessionid</code>)
+                </label>
+                <input 
+                  type="password" 
+                  id="sessionIdInput" 
+                  placeholder="Optional: for private accounts or bypass rate limits" 
+                  class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white text-xs placeholder-slate-500 focus:ring-1 focus:ring-pink-500"
+                >
+                <p class="text-[10px] text-slate-500 mt-1">Found in your browser's Developer Tools &gt; Application &gt; Cookies for instagram.com</p>
+              </div>
+
+              <div class="space-y-3">
+                <div>
+                  <label for="maxPostsInput" class="block text-xs font-medium text-slate-400 mb-1">
+                    Max Profile Posts to Scrape
+                  </label>
+                  <input 
+                    type="number" 
+                    id="maxPostsInput" 
+                    value="12" 
+                    min="1" 
+                    max="50" 
+                    class="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white text-xs"
+                  >
+                </div>
+                <div class="flex items-center gap-2">
+                  <input type="checkbox" id="downloadDiskInput" class="w-4 h-4 rounded text-pink-600 focus:ring-pink-500 bg-slate-900 border-slate-700">
+                  <label for="downloadDiskInput" class="text-xs text-slate-300">Save images directly to server disk (<code class="text-pink-400">./downloads</code>)</label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </form>
+
+      <!-- Status Indicator -->
+      <div id="loadingStatus" class="hidden mt-6 text-center py-8">
+        <div class="inline-block animate-spin text-3xl text-pink-500 mb-2">
+          <i class="fa-solid fa-circle-notch"></i>
+        </div>
+        <p class="text-slate-300 font-medium text-sm">Querying Instagram and extracting media...</p>
+        <p class="text-slate-500 text-xs">Parsing photo CDN nodes, captions, and engagement metrics</p>
+      </div>
+
+      <!-- Error Alert -->
+      <div id="errorBox" class="hidden mt-4 p-4 bg-red-950/50 border border-red-800 text-red-200 rounded-xl text-sm flex items-start gap-3">
+        <i class="fa-solid fa-triangle-exclamation text-red-400 mt-0.5"></i>
+        <div id="errorMessage" class="flex-1"></div>
+      </div>
+    </div>
+
+    <!-- Results Section -->
+    <div id="resultsSection" class="hidden space-y-6">
+      
+      <!-- Stats / Profile Card -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div id="profileBadge" class="flex items-center gap-4">
+          <img id="profileAvatar" src="" alt="Avatar" class="w-14 h-14 rounded-full border-2 border-pink-500 object-cover hidden">
+          <div>
+            <h2 id="resultTitle" class="text-xl font-bold text-white">Scrape Results</h2>
+            <p id="resultSubtitle" class="text-sm text-slate-400"></p>
+          </div>
+        </div>
+
+        <!-- Export Buttons -->
+        <div class="flex items-center gap-2 flex-wrap">
+          <a href="/api/download-zip" class="px-4 py-2 bg-pink-600 hover:bg-pink-500 text-white rounded-lg text-sm font-medium transition flex items-center gap-2 shadow-lg shadow-pink-500/20">
+            <i class="fa-solid fa-file-zipper"></i>
+            <span>Download All (ZIP)</span>
+          </a>
+          <a href="/api/export/json" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-sm font-medium border border-slate-700 transition flex items-center gap-1.5">
+            <i class="fa-solid fa-code"></i>
+            <span>JSON</span>
+          </a>
+          <a href="/api/export/csv" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-sm font-medium border border-slate-700 transition flex items-center gap-1.5">
+            <i class="fa-solid fa-table"></i>
+            <span>CSV</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Photo Grid -->
+      <div id="photosGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Photo Cards dynamically injected here -->
+      </div>
+    </div>
+
+    <!-- API & CLI Usage Guide Section -->
+    <div class="mt-16 bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8">
+      <h3 class="text-xl font-bold text-white mb-2 flex items-center gap-2">
+        <i class="fa-solid fa-terminal text-pink-400"></i>
+        <span>Developer CLI &amp; Python API</span>
+      </h3>
+      <p class="text-sm text-slate-400 mb-6">Use this tool directly from your terminal, integrate it in Python scripts, or invoke the REST API.</p>
+
+      <div class="space-y-4">
+        <div>
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 block mb-1">1. CLI Usage</span>
+          <pre class="bg-slate-950 p-4 rounded-xl text-slate-300 font-mono text-xs overflow-x-auto border border-slate-800"><code># Download photos from a post
+python scrape_instagram_photos.py --query "https://www.instagram.com/p/DFzL121P0qG/" --download
+
+# Scrape profile photos and export JSON
+python scrape_instagram_photos.py --query "@natgeo" --max-posts 15 --format json --output natgeo.json
+
+# Launch the live Web UI
+python scrape_instagram_photos.py --serve --port 5000</code></pre>
+        </div>
+
+        <div>
+          <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 block mb-1">2. Python Package Integration</span>
+          <pre class="bg-slate-950 p-4 rounded-xl text-slate-300 font-mono text-xs overflow-x-auto border border-slate-800"><code>from scrape_instagram_photos import InstagramScraper
+
+scraper = InstagramScraper(config={"download_dir": "./my_photos"})
+results = scraper.scrape("https://www.instagram.com/p/DFzL121P0qG/", download=True)
+
+for res in results:
+    print(f"Author: @{res.username} | Likes: {res.likes:,}")
+    print(f"Photos: {len(res.media_urls)} found")</code></pre>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-800 bg-slate-950 py-6 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <p>&copy; 2026 Scrape Instagram Photos. Released under the MIT License.</p>
+      <p>Built with ❤️ by <a href="https://github.com/sukh8397" target="_blank" class="text-pink-400 hover:underline">sukh8397</a></p>
+    </div>
+  </footer>
+
+  <script>
+    function setQuery(val) {
+      document.getElementById('queryInput').value = val;
+    }
+
+    function toggleAdvanced() {
+      const sec = document.getElementById('advancedSection');
+      const icon = document.getElementById('advIcon');
+      sec.classList.toggle('hidden');
+      icon.classList.toggle('rotate-90');
+    }
+
+    document.getElementById('scrapeForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const query = document.getElementById('queryInput').value.trim();
+      const sessionId = document.getElementById('sessionIdInput').value.trim();
+      const maxPosts = document.getElementById('maxPostsInput').value;
+      const download = document.getElementById('downloadDiskInput').checked;
+
+      const loadingStatus = document.getElementById('loadingStatus');
+      const errorBox = document.getElementById('errorBox');
+      const errorMessage = document.getElementById('errorMessage');
+      const resultsSection = document.getElementById('resultsSection');
+      const submitBtn = document.getElementById('submitBtn');
+
+      loadingStatus.classList.remove('hidden');
+      errorBox.classList.add('hidden');
+      resultsSection.classList.add('hidden');
+      submitBtn.disabled = true;
+      submitBtn.classList.add('opacity-50');
+
+      try {
+        const resp = await fetch('/api/scrape', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            query: query,
+            session_id: sessionId,
+            max_posts: parseInt(maxPosts) || 12,
+            download: download
+          })
+        });
+
+        const data = await resp.json();
+
+        if (!data.success) {
+          throw new Error(data.error || 'Failed to scrape photos.');
+        }
+
+        renderResults(data);
+        resultsSection.classList.remove('hidden');
+      } catch (err) {
+        errorMessage.innerText = err.message;
+        errorBox.classList.remove('hidden');
+      } finally {
+        loadingStatus.classList.add('hidden');
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('opacity-50');
+      }
+    });
+
+    function renderResults(data) {
+      const photosGrid = document.getElementById('photosGrid');
+      const resultTitle = document.getElementById('resultTitle');
+      const resultSubtitle = document.getElementById('resultSubtitle');
+      const profileAvatar = document.getElementById('profileAvatar');
+
+      photosGrid.innerHTML = '';
+
+      resultTitle.innerText = `${data.total_photos} Photo(s) Extracted across ${data.posts_count} Post(s)`;
+      resultSubtitle.innerText = `Query: ${data.query}`;
+
+      // Check if profile info exists
+      const firstRes = data.results[0];
+      if (firstRes && firstRes.profile_info && firstRes.profile_info.profile_pic_url) {
+        profileAvatar.src = firstRes.profile_info.profile_pic_url;
+        profileAvatar.classList.remove('hidden');
+        resultSubtitle.innerText = `@${firstRes.profile_info.username} (${firstRes.profile_info.full_name || ''}) • ${firstRes.profile_info.followers?.toLocaleString() || 0} followers`;
+      } else {
+        profileAvatar.classList.add('hidden');
+      }
+
+      data.results.forEach((post) => {
+        post.media_urls.forEach((photoUrl, idx) => {
+          const card = document.createElement('div');
+          card.className = "bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl hover:border-slate-700 transition flex flex-col";
+
+          const cap = post.caption ? (post.caption.length > 120 ? post.caption.slice(0, 120) + '...' : post.caption) : 'No caption';
+
+          card.innerHTML = `
+            <div class="relative bg-slate-950 aspect-square overflow-hidden group">
+              <img src="${photoUrl}" alt="Instagram Photo" class="w-full h-full object-cover group-hover:scale-105 transition duration-300" loading="lazy">
+              <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent opacity-0 group-hover:opacity-100 transition p-4 flex flex-col justify-end">
+                <a href="${photoUrl}" target="_blank" class="w-full text-center py-2 bg-pink-600 hover:bg-pink-500 text-white rounded-lg text-xs font-semibold transition">
+                  <i class="fa-solid fa-up-right-from-square mr-1"></i> Open Full Res
+                </a>
+              </div>
+            </div>
+            <div class="p-4 flex-1 flex flex-col justify-between">
+              <div>
+                <div class="flex items-center justify-between text-xs text-slate-400 mb-2">
+                  <span class="font-medium text-slate-300">@${post.username || 'user'}</span>
+                  <span>${post.timestamp ? new Date(post.timestamp).toLocaleDateString() : ''}</span>
+                </div>
+                <p class="text-xs text-slate-300 mb-3">${escapeHtml(cap)}</p>
+              </div>
+
+              <div class="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+                <div class="flex items-center gap-3">
+                  <span class="flex items-center gap-1 text-pink-400"><i class="fa-solid fa-heart"></i> ${post.likes?.toLocaleString() || 0}</span>
+                  <span class="flex items-center gap-1 text-slate-400"><i class="fa-solid fa-comment"></i> ${post.comments_count?.toLocaleString() || 0}</span>
+                </div>
+                <a href="${photoUrl}" download class="text-pink-400 hover:text-pink-300 font-medium">
+                  <i class="fa-solid fa-download mr-1"></i> Save
+                </a>
+              </div>
+            </div>
+          `;
+          photosGrid.appendChild(card);
+        });
+      });
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.innerText = text;
+      return div.innerHTML;
+    }
+  </script>
+</body>
+</html>

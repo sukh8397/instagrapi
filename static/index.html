@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scrape Instagram Photos - Online Photo & Metadata Downloader</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            igPink: '#E1306C',
+            igPurple: '#C13584',
+            igOrange: '#F56040',
+            igYellow: '#FCAF45',
+            darkBg: '#0f172a',
+            darkCard: '#1e293b'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .ig-gradient-text {
+      background: linear-gradient(45deg, #FCAF45, #F56040, #E1306C, #C13584, #833AB4);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .ig-gradient-bg {
+      background: linear-gradient(45deg, #FCAF45, #F56040, #E1306C, #C13584, #833AB4);
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans flex flex-col justify-between">
+
+  <!-- Navbar -->
+  <header class="border-b border-slate-800 bg-slate-900/60 backdrop-blur sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl ig-gradient-bg flex items-center justify-center text-white shadow-lg shadow-pink-500/20">
+          <i class="fa-brands fa-instagram text-2xl"></i>
+        </div>
+        <div>
+          <span class="text-xl font-bold tracking-tight text-white">Scrape <span class="ig-gradient-text">Instagram</span> Photos</span>
+          <span class="text-xs px-2 py-0.5 ml-2 rounded-full bg-pink-500/10 text-pink-400 border border-pink-500/20">Live Web App</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-4">
+        <a href="https://github.com/sukh8397/scrape-instagram-photos" target="_blank" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium border border-slate-700 transition">
+          <i class="fa-brands fa-github text-base"></i>
+          <span>GitHub</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Hero -->
+  <main class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex-grow w-full">
+    <div class="text-center max-w-3xl mx-auto mb-8">
+      <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight mb-4">
+        Download &amp; Scrape <span class="ig-gradient-text">Instagram Photos</span>
+      </h1>
+      <p class="text-slate-400 text-base sm:text-lg">
+        Extract high-resolution photos, carousels, profile info, and metadata.
+      </p>
+    </div>
+
+    <!-- Scrape Form Card -->
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl relative mb-10">
+      <form id="scrapeForm" class="space-y-4">
+        <div>
+          <label for="queryInput" class="block text-sm font-medium text-slate-300 mb-2">
+            Instagram Post URL or Profile Username
+          </label>
+          <div class="relative flex items-center">
+            <span class="absolute left-4 text-slate-500">
+              <i class="fa-solid fa-link"></i>
+            </span>
+            <input 
+              type="text" 
+              id="queryInput" 
+              required
+              placeholder="e.g. https://www.instagram.com/p/DFzL121P0qG/ or @natgeo" 
+              class="w-full pl-11 pr-32 py-3.5 bg-slate-950 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent text-sm sm:text-base transition"
+            >
+            <button 
+              type="submit" 
+              id="submitBtn" 
+              class="absolute right-2 px-5 py-2 rounded-lg ig-gradient-bg text-white font-medium hover:opacity-90 active:scale-95 transition flex items-center gap-2 text-sm shadow-md"
+            >
+              <i class="fa-solid fa-bolt"></i>
+              <span>Scrape</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2 flex-wrap text-xs text-slate-400">
+          <span>Quick Samples:</span>
+          <button type="button" onclick="setQuery('https://www.instagram.com/p/DFzL121P0qG/')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 rounded-md text-slate-300 transition">Sample Post</button>
+          <button type="button" onclick="setQuery('@natgeo')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 rounded-md text-slate-300 transition">@natgeo</button>
+          <button type="button" onclick="setQuery('@nasa')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 rounded-md text-slate-300 transition">@nasa</button>
+        </div>
+      </form>
+
+      <!-- Status Indicator -->
+      <div id="loadingStatus" class="hidden mt-6 text-center py-8">
+        <div class="inline-block animate-spin text-3xl text-pink-500 mb-2">
+          <i class="fa-solid fa-circle-notch"></i>
+        </div>
+        <p class="text-slate-300 font-medium text-sm">Processing request...</p>
+      </div>
+
+      <!-- Result or Notice -->
+      <div id="errorBox" class="hidden mt-4 p-4 bg-slate-950 border border-slate-800 rounded-xl text-sm">
+        <div id="errorMessage"></div>
+      </div>
+    </div>
+
+    <!-- Features -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+      <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
+        <div class="w-10 h-10 rounded-lg bg-pink-500/10 text-pink-400 flex items-center justify-center mb-4 text-xl">
+          <i class="fa-solid fa-images"></i>
+        </div>
+        <h4 class="font-bold text-white mb-1">Bulk Photo Downloads</h4>
+        <p class="text-xs text-slate-400 leading-relaxed">Download full-resolution 1080p photos and multi-photo carousels with single-click ZIP export.</p>
+      </div>
+
+      <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
+        <div class="w-10 h-10 rounded-lg bg-purple-500/10 text-purple-400 flex items-center justify-center mb-4 text-xl">
+          <i class="fa-solid fa-database"></i>
+        </div>
+        <h4 class="font-bold text-white mb-1">Rich Metadata Extraction</h4>
+        <p class="text-xs text-slate-400 leading-relaxed">Extract captions, likes count, comment count, author info, and original ISO timestamps into JSON and CSV.</p>
+      </div>
+
+      <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
+        <div class="w-10 h-10 rounded-lg bg-orange-500/10 text-orange-400 flex items-center justify-center mb-4 text-xl">
+          <i class="fa-solid fa-terminal"></i>
+        </div>
+        <h4 class="font-bold text-white mb-1">CLI &amp; Python Package</h4>
+        <p class="text-xs text-slate-400 leading-relaxed">Easily run from command line, integrate into automated scraping workflows, or start the web server.</p>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="border-t border-slate-800 bg-slate-950 py-6 text-center text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <p>&copy; 2026 Scrape Instagram Photos. MIT License.</p>
+      <p>Created by <a href="https://github.com/sukh8397" target="_blank" class="text-pink-400 hover:underline">sukh8397</a></p>
+    </div>
+  </footer>
+
+  <script>
+    function setQuery(val) {
+      document.getElementById('queryInput').value = val;
+    }
+
+    document.getElementById('scrapeForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const query = document.getElementById('queryInput').value.trim();
+      const loading = document.getElementById('loadingStatus');
+      const errorBox = document.getElementById('errorBox');
+      const errorMsg = document.getElementById('errorMessage');
+
+      loading.classList.remove('hidden');
+      errorBox.classList.add('hidden');
+
+      try {
+        // Try contacting local/backend API
+        const resp = await fetch('/api/scrape', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query: query })
+        });
+        const data = await resp.json();
+        if (data.success) {
+          window.location.href = '/';
+        } else {
+          throw new Error(data.error);
+        }
+      } catch (err) {
+        errorMsg.innerHTML = `
+          <div class="text-slate-300">
+            <p class="font-semibold text-pink-400 mb-1">To run full live scraping with the backend server:</p>
+            <pre class="bg-slate-900 p-3 rounded-lg text-xs font-mono text-slate-300 overflow-x-auto my-2"><code>git clone https://github.com/sukh8397/scrape-instagram-photos.git
+cd scrape-instagram-photos
+pip install -r requirements.txt
+python app.py</code></pre>
+            <p class="text-xs text-slate-400">Then visit <code class="text-pink-400">http://localhost:5000</code> to scrape any Instagram profile or post URL in real time!</p>
+          </div>
+        `;
+        errorBox.classList.remove('hidden');
+      } finally {
+        loading.classList.add('hidden');
+      }
+    });
+  </script>
+</body>
+</html>
